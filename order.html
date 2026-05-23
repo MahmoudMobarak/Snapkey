@@ -1,406 +1,356 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KeyCraft | Custom Memories</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Snapkey | Customize</title>
 
-    <style>
-        :root {
-            --primary: #6366f1;
-            --secondary: #a855f7;
-            --dark: #0f172a;
-            --bg: #f8fafc;
-        }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background: var(--bg); color: var(--dark); overflow-x: hidden; scroll-behavior: smooth; }
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
-        .reveal.active { opacity: 1; transform: translateY(0); }
-
-        nav {
-            position: fixed; top: 0; width: 100%; padding: 1.2rem 0;
-            background: rgba(255,255,255,0.7); backdrop-filter: blur(15px);
-            z-index: 1000; border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-        .nav-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; padding: 0 2rem; align-items: center; }
-
-        .hero { min-height: 90vh; display: flex; align-items: center; padding: 120px 2rem; background: radial-gradient(circle at top right, #e0e7ff, #f8fafc); }
-        .hero-content { max-width: 1200px; margin: 0 auto; width: 100%; }
-        .hero h1 { 
-            font-size: clamp(4rem, 12vw, 8.5rem); 
-            font-weight: 800; 
-            line-height: 0.85; 
-            letter-spacing: -5px; 
-            margin-bottom: 2.5rem; 
-            background: linear-gradient(to bottom right, var(--dark), var(--primary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .hero p { font-size: 1.8rem; color: #64748b; max-width: 700px; font-weight: 400; line-height: 1.4; }
-
-        .order-container { max-width: 1000px; margin: 0 auto; padding: 6rem 2rem; }
-        .order-box { background: white; padding: 4rem; border-radius: 50px; box-shadow: 0 40px 100px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
-        
-        .input-group { margin-bottom: 2.5rem; }
-        .input-group label { display: block; margin-bottom: 1rem; font-weight: 800; font-size: 1.4rem; color: var(--dark); }
-        .input-group input {
-            width: 100%; background: #f1f5f9; border: 3px solid transparent; border-radius: 22px;
-            padding: 1.6rem; font-size: 1.4rem; transition: 0.3s; font-weight: 600;
-        }
-        .input-group input:focus { border-color: var(--primary); background: white; outline: none; box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.1); }
-
-        .qty-wrapper { display: flex; align-items: center; justify-content: center; gap: 3rem; margin: 4rem 0; background: #f1f5f9; padding: 1.5rem; border-radius: 35px; }
-        .qty-btn { 
-            width: 85px; height: 85px; border-radius: 25px; border: none; 
-            background: white; font-size: 2.5rem; font-weight: 800; cursor: pointer; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05); transition: 0.2s;
-        }
-        .qty-btn:hover { background: var(--primary); color: white; transform: scale(1.1); }
-        #qtyText { font-size: 3.5rem; font-weight: 800; min-width: 80px; text-align: center; }
-
-        .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; margin-bottom: 4rem; }
-        .upload-box {
-            height: 300px; border: 4px dashed #cbd5e1; border-radius: 40px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; position: relative; overflow: hidden; background: #f8fafc; transition: 0.3s;
-        }
-        .upload-box:hover { border-color: var(--primary); background: #eef2ff; }
-        .upload-box span { font-size: 1.2rem; font-weight: 700; color: #64748b; }
-        .upload-box img { position: absolute; width: 100%; height: 100%; object-fit: cover; display: none; }
-
-        .submit-btn {
-            width: 100%; padding: 2rem; background: var(--dark); color: white;
-            border-radius: 30px; font-size: 1.8rem; font-weight: 800; border: none;
-            cursor: pointer; transition: 0.4s; letter-spacing: -1px;
-        }
-        .submit-btn:hover { transform: translateY(-8px); box-shadow: 0 30px 60px rgba(0,0,0,0.2); background: var(--primary); }
-
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(12px); display: none; align-items: center;
-            justify-content: center; z-index: 2000; padding: 1rem;
-        }
-        .modal-card {
-            background: white; padding: 4rem; border-radius: 50px; width: 100%;
-            max-width: 600px; text-align: center; transform: scale(0.8); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .modal-overlay.active { display: flex; }
-        .modal-overlay.active .modal-card { transform: scale(1); }
-
-        .receipt-preview {
-            background: #f1f5f9; padding: 2.5rem; border-radius: 30px;
-            text-align: left; margin: 2.5rem 0; border: 2px dashed #cbd5e1; font-size: 1.2rem;
-        }
-
-        @media (max-width: 768px) { 
-            .hero h1 { font-size: 4.5rem; letter-spacing: -2px; }
-            .upload-grid { grid-template-columns: 1fr; } 
-            .order-box { padding: 2rem; }
-        }
-    </style>
+<style>
+:root{ --bg:#f6f3f8; --card:#ffffff; --text:#0a0730; --muted:#7d7794; --border:#e5d7ef; --purple:#8f44fd; --purple2:#d94ecf; --navy:#040b3f; }
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{ background:var(--bg); font-family:'Inter',sans-serif; color:var(--text); min-height:100vh; }
+.container{ width:100%; max-width:980px; margin:auto; padding:28px; }
+.topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:30px; }
+.back-btn{ display:flex; align-items:center; gap:8px; color:#5d5672; text-decoration:none; font-size:14px; font-weight:500; }
+.logo-wrap{ display:flex; align-items:center; gap:10px; }
+.logo-wrap img{ width:38px; height:38px; border-radius:50%; object-fit:cover; }
+.logo-wrap span{ color:#7d27e7; font-weight:600; font-size:28px; font-family:'Cormorant Garamond',serif; }
+.card{ width:100%; background:white; border:1px solid var(--border); border-radius:28px; padding:45px; box-shadow:0 10px 40px rgba(125,0,255,0.05); }
+.title{ text-align:center; font-size:72px; font-family:'Cormorant Garamond',serif; font-weight:700; margin-bottom:40px; color:#070539; }
+.label{ font-size:15px; font-weight:700; margin-bottom:10px; display:block; }
+.input{ width:100%; height:64px; border:1px solid #e3d4ec; border-radius:18px; background:#f7f3f8; padding:0 20px; outline:none; font-size:15px; }
+.input:focus{ border-color:#b76cff; background:white; }
+.row{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.qty-box{ margin-top:28px; background:#f5eff7; border-radius:22px; padding:22px; display:flex; align-items:center; justify-content:center; gap:35px; }
+.qty-btn{ width:52px; height:52px; border-radius:16px; border:none; background:white; cursor:pointer; font-size:22px; font-weight:700; color:#2e2752; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
+.qty-text{ font-size:28px; font-weight:800; min-width:25px; text-align:center; }
+.keychain-section{ margin-top:28px; padding:25px; border:1px solid #eadcf2; border-radius:24px; background:#fcfbfd; }
+.key-title{ font-size:18px; font-weight:800; margin-bottom:20px; }
+.upload-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.upload-box{ aspect-ratio:1/1; border:2px dashed #d7aef7; border-radius:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; background:#faf7fc; overflow:hidden; position:relative; transition:0.3s; }
+.upload-box:hover{ border-color:#a93fff; background:#f7efff; }
+.upload-box img{ width:100%; height:100%; object-fit:cover; display:none; position:absolute; }
+.upload-box span{ z-index:2; text-align: center; }
+.upload-title{ font-weight:800; margin-top:12px; }
+.upload-sub{ font-size:13px; color:#77718d; margin-top:6px; }
+.promo-wrap{ margin-top:30px; }
+.promo-row{ display:flex; gap:14px; }
+.apply-btn{ border:none; min-width:110px; border-radius:16px; color:white; font-weight:700; cursor:pointer; background:linear-gradient(135deg,var(--purple),var(--purple2)); }
+.price-box{ margin-top:28px; background:#f5eff7; border-radius:22px; padding:30px; text-align:center; }
+.price-small{ font-size:12px; letter-spacing:5px; font-weight:800; color:#716b84; margin-bottom:8px; }
+.price{ font-size:52px; font-family:'Cormorant Garamond',serif; font-weight:700; background:linear-gradient(135deg,#8f44fd,#d94ecf); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.submit-btn{ width:100%; height:72px; border:none; border-radius:22px; background:#03093f; color:white; font-size:18px; font-weight:800; margin-top:30px; cursor:pointer; transition:0.25s; }
+.submit-btn:hover{ transform:translateY(-2px); }
+.submit-btn:disabled{ background:#756f89; cursor:not-allowed; transform:none; }
+.bottom-text{ margin-top:16px; text-align:center; color:#756f89; font-size:13px; }
+.modal{ position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:9999; padding:20px; }
+.modal.active{ display:flex; }
+.receipt{ width:100%; max-width:600px; background:white; border-radius:30px; padding:40px; }
+.receipt h2{ text-align:center; font-size:42px; margin-bottom:25px; font-family:'Cormorant Garamond',serif; }
+.receipt-box{ background:#f7f3fa; border-radius:20px; padding:25px; margin-top:20px; }
+.receipt-box p{ margin-bottom:12px; font-size:15px; }
+.download-btn{ width:100%; margin-top:25px; height:60px; border:none; border-radius:18px; background:linear-gradient(135deg,var(--purple),var(--purple2)); color:white; font-weight:800; cursor:pointer; font-size:16px; }
+.close-btn{ width:100%; margin-top:12px; height:58px; border:1px solid #ddd; border-radius:18px; background:white; cursor:pointer; font-weight:700; }
+@media(max-width:850px){ .title{ font-size:52px; } .row, .upload-grid{ grid-template-columns:1fr; } .card{ padding:25px; } }
+</style>
 </head>
 <body>
 
-    <nav>
-        <div class="nav-content">
-            <div style="font-weight: 900; font-size: 2rem; letter-spacing: -2px;">KeyCraft</div>
-            <a href="#order" style="text-decoration: none; color: var(--primary); font-weight: 800; font-size: 1.1rem;">Order Now</a>
-        </div>
-    </nav>
-
-    <section class="hero">
-        <div class="hero-content">
-            <div class="reveal">
-                <p style="font-weight: 800; color: var(--primary); margin-bottom: 1.5rem; letter-spacing: 3px;">24H PRODUCTION</p>
-                <h1>MEMORIES <br>YOU CAN <br>CARRY.</h1>
-                <p>Double-sided premium keychains for just 4 AED. High-definition, water-resistant, and built to last.</p>
-            </div>
-        </div>
-    </section>
-
-    <div class="order-container" id="order">
-        <div class="order-box reveal">
-            <h2 style="font-size: 3.5rem; margin-bottom: 4rem; text-align: center; letter-spacing: -2px;">Customize</h2>
-            
-            <form id="keyForm">
-                <div class="input-group">
-                    <label>Full Name</label>
-                    <input type="text" id="custName" placeholder="Your Name" required>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-                    <div class="input-group">
-                        <label>Email Address</label>
-                        <input type="email" id="custEmail" placeholder="email@example.com" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Phone Number</label>
-                        <input type="tel" id="custPhone" placeholder="05X XXX XXXX" >
-                    </div>
-                </div>
-
-                <div class="qty-wrapper">
-                    <button type="button" class="qty-btn" onclick="updateQty(-1)">−</button>
-                    <div id="qtyText">1</div>
-                    <button type="button" class="qty-btn" onclick="updateQty(1)">+</button>
-                </div>
-
-                <div class="upload-grid">
-                    <div class="upload-box" onclick="document.getElementById('fFile').click()">
-                        <input type="file" id="fFile" hidden accept="image/*" required>
-                        <span id="fLab">📸 Front Photo</span>
-                        <img id="fImg">
-                    </div>
-                    <div class="upload-box" onclick="document.getElementById('bFile').click()">
-                        <input type="file" id="bFile" hidden accept="image/*" required>
-                        <span id="bLab">📸 Back Photo</span>
-                        <img id="bImg">
-                    </div>
-                </div>
-
-                <div class="input-group" style="margin-top: 2rem;">
-                    <label>Promo Code</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="promoInput" placeholder="Enter code (e.g. SCHOOL)" style="text-transform: uppercase;">
-                        <button type="button" onclick="applyPromo()" id="promoBtn" style="padding: 0 20px; border-radius: 15px; background: var(--primary); color: white; border: none; font-weight: 700; cursor: pointer; min-width: 100px;">Apply</button>
-                    </div>
-                </div>
-
-                <div style="padding: 3rem; background: #f8fafc; border-radius: 35px; margin-bottom: 3rem; text-align: center;">
-                    <div style="font-weight: 800; font-size: 2.5rem;">
-                        <span style="color: #64748b; font-size: 1.2rem; display: block; margin-bottom: 0.5rem; text-transform: uppercase;">Final Price</span>
-                        <span id="totalDisplay" style="color: var(--primary);">4.00 AED</span>
-                    </div>
-                </div>
-
-                <button type="submit" class="submit-btn" id="subBtn">Place Your Order</button>
-            </form>
+<div class="container">
+    <div class="topbar">
+        <a href="index.html" class="back-btn">← Back</a>
+        <div class="logo-wrap">
+            <span>Snapkey</span>
         </div>
     </div>
 
-    <div class="modal-overlay" id="successModal">
-        <div class="modal-card" id="receiptContent">
-            <div style="font-size: 5rem; margin-bottom: 1rem;">✨</div>
-            <h2 style="font-size: 2.5rem; margin-bottom: 1rem; letter-spacing: -1px;">Order Success!</h2>
-            <p style="color: #64748b; font-size: 1.2rem;">We've received your memories. Check your email.</p>
-            
-            <div class="receipt-preview">
-                <p><strong>Order ID:</strong> <span id="rID">#---</span></p>
-                <p><strong>Name:</strong> <span id="rName">---</span></p>
-                <p><strong>Quantity:</strong> <span id="rQty">1</span></p>
-                <p><strong>Total:</strong> <span id="rTotal">4.00 AED</span></p>
+    <div class="card">
+        <h1 class="title">Customize</h1>
+        <form id="orderForm">
+            <label class="label">Full Name</label>
+            <input required type="text" class="input" id="custName" placeholder="Your Name">
+
+            <div class="row" style="margin-top:22px;">
+                <div>
+                    <label class="label">Email Address</label>
+                    <input required type="email" class="input" id="custEmail" placeholder="email@example.com">
+                </div>
+                <div>
+                    <label class="label">Phone Number</label>
+                    <input required type="text" class="input" id="custPhone" placeholder="05X XXX XXXX">
+                </div>
             </div>
 
-            <button class="submit-btn" onclick="downloadReceipt()" style="background: var(--primary); margin-bottom: 1.5rem; font-size: 1.4rem;">Download Receipt</button>
-            <button class="submit-btn" onclick="location.reload()" style="background: transparent; color: var(--dark); border: 3px solid #eee; font-size: 1.2rem;">Back to Home</button>
-        </div>
+            <div class="qty-box">
+                <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
+                <div class="qty-text" id="qtyText">1</div>
+                <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+            </div>
+
+            <div id="keychainContainer"></div>
+
+            <div class="promo-wrap">
+                <label class="label">Promo Code</label>
+                <div class="promo-row">
+                    <input type="text" class="input" id="promoInput" placeholder="ENTER CODE (E.G. SCHOOL)" style="text-transform:uppercase;">
+                    <button type="button" class="apply-btn" id="promoBtn">Apply</button>
+                </div>
+            </div>
+
+            <div class="price-box">
+                <div class="price-small">FINAL PRICE</div>
+                <div class="price" id="totalDisplay">4.00 AED</div>
+            </div>
+
+            <button class="submit-btn" id="submitBtn">Place Your Order</button>
+            <div class="bottom-text">Collect at Stall 5 · Market Day June 16–18, 2026</div>
+        </form>
     </div>
+</div>
 
-    <script>
-        let sb;
-        let qty = 1;
-        const config = {
-            url: "https://pkzvftleoysldqmjdgds.supabase.co",
-            key: "sb_publishable_H9QIgdBqQZtHXcywZyDsjA_s4fXffjN",
-            ejs_key: "wFE7Ll5cDKSxM4Zfs",
-            ejs_svc: "service_zlh57wd",
-            ejs_tmp: "template_hu5h00o"
-        };
+<div class="modal" id="receiptModal">
+    <div class="receipt" id="receiptContent">
+        <h2>Order Success!</h2>
+        <div class="receipt-box">
+            <p><strong>Order ID:</strong> <span id="rID"></span></p>
+            <p><strong>Name:</strong> <span id="rName"></span></p>
+            <p><strong>Email:</strong> <span id="rEmail"></span></p>
+            <p><strong>Quantity:</strong> <span id="rQty"></span></p>
+            <p><strong>Total:</strong> <span id="rTotal"></span></p>
+        </div>
+        <button class="download-btn" onclick="downloadReceipt()">Download Receipt PDF</button>
+        <button class="close-btn" onclick="location.reload()">Back To Home</button>
+    </div>
+</div>
 
-        window.onload = () => {
-            emailjs.init(config.ejs_key);
-            sb = window.supabase.createClient(config.url, config.key);
-            
-            const obs = new IntersectionObserver(entries => {
-                entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('active'); });
-            }, { threshold: 0.1 });
-            document.querySelectorAll('.reveal').forEach(r => obs.observe(r));
-        };
+<script>
+const config = {
+    url: "https://pkzvftleoysldqmjdgds.supabase.co",
+    key: "sb_publishable_H9QIgdBqQZtHXcywZyDsjA_s4fXffjN",
+    ejs_key: "wFE7Ll5cDKSxM4Zfs",
+    ejs_svc: "service_zlh57wd",
+    ejs_tmp: "template_hu5h00o"
+};
 
-        let activePromo = null;
-        let discountInfo = { type: null, value: 0 };
-        window.currentTotal = 4.00;
-        window.currentDiscount = 0;
-        
-        async function applyPromo() {
-            const codeInput = document.getElementById('promoInput').value.trim().toUpperCase();
-            const emailInput = document.getElementById('custEmail').value.trim().toLowerCase();
+let sb;
+window.onload = () => {
+    emailjs.init(config.ejs_key);
+    sb = window.supabase.createClient(config.url, config.key);
+    renderKeychains();
+};
 
-            if(!emailInput || !emailInput.includes('@')) {
-                alert("Please enter a valid email address first to check promo eligibility.");
-                return;
-            }
-            if(!codeInput) return;
-        
-            // Check if code exists
-            const { data: promo, error } = await sb
-                .from('promo_codes')
-                .select('*')
-                .eq('code', codeInput)
-                .eq('active', true)
-                .single();
-        
-            if (error || !promo) {
-                alert("Invalid or expired code.");
-                return;
-            }
+let qty = 1;
+let activePromo = null;
+let discountInfo = { type:null, value:0 };
 
-            // Check if email already used this code
-            const { data: usage } = await sb
-                .from('used_promos')
-                .select('*')
-                .eq('email', emailInput)
-                .eq('promo_code', codeInput)
-                .maybeSingle();
+function changeQty(n){
+    qty += n;
+    if(qty < 1) qty = 1;
+    if(qty > 10) qty = 10;
+    document.getElementById('qtyText').innerText = qty;
+    renderKeychains();
+    updateTotal();
+}
 
-            if (usage) {
-                alert("This email has already used this promo code.");
-                return;
-            }
+function renderKeychains(){
+    const container = document.getElementById('keychainContainer');
+    container.innerHTML = "";
+    for(let i=1; i<=qty; i++){
+        container.innerHTML += `
+        <div class="keychain-section">
+            <div class="key-title">Keychain ${i}</div>
+            <div class="upload-grid">
+                <label class="upload-box">
+                    <input type="file" accept="image/*" hidden required id="front${i}" onchange="previewImage(this,'frontImg${i}','frontText${i}')">
+                    <img id="frontImg${i}">
+                    <span id="frontText${i}">
+                        <div style="font-size:34px;">⬆</div>
+                        <div class="upload-title">Front Photo</div>
+                        <div class="upload-sub">Tap to upload</div>
+                    </span>
+                </label>
+                <label class="upload-box">
+                    <input type="file" accept="image/*" hidden required id="back${i}" onchange="previewImage(this,'backImg${i}','backText${i}')">
+                    <img id="backImg${i}">
+                    <span id="backText${i}">
+                        <div style="font-size:34px;">⬆</div>
+                        <div class="upload-title">Back Photo</div>
+                        <div class="upload-sub">Tap to upload</div>
+                    </span>
+                </label>
+            </div>
+        </div>`;
+    }
+}
 
-            // Apply successful promo
-            activePromo = promo.code;
-            discountInfo = { type: promo.discount_type, value: parseFloat(promo.discount_value) };
-            
-            const pBtn = document.getElementById('promoBtn');
-            pBtn.style.background = "#ef4444"; // Red for Remove
-            pBtn.innerText = "Remove";
-            pBtn.onclick = removePromo;
-            
-            updateQty(0); 
+function previewImage(input,imgId,textId){
+    const file = input.files[0];
+    if(!file) return;
+    const img = document.getElementById(imgId);
+    img.src = URL.createObjectURL(file);
+    img.style.display = "block";
+    document.getElementById(textId).style.display = "none";
+}
+
+document.getElementById('promoBtn').onclick = async () => {
+    const code = document.getElementById('promoInput').value.trim().toUpperCase();
+    const email = document.getElementById('custEmail').value.trim().toLowerCase();
+    if(!code){ alert("Enter promo code"); return; }
+    if(!email){ alert("Enter email first"); return; }
+
+    const { data: promo, error } = await sb.from('promo_codes').select('*').eq('code', code).eq('active', true).single();
+    if(error || !promo){ alert("Invalid promo code"); return; }
+
+    const { data: usage } = await sb.from('used_promos').select('*').eq('email', email).eq('promo_code', code).maybeSingle();
+    if(usage){ alert("You already used this code"); return; }
+
+    activePromo = promo.code;
+    discountInfo = { type: promo.discount_type, value: parseFloat(promo.discount_value) };
+    updateTotal();
+    
+    const btn = document.getElementById('promoBtn');
+    btn.innerText = "Applied";
+    btn.style.opacity = "0.7";
+};
+
+function updateTotal(){
+    let subtotal = qty * 4;
+    let discount = 0;
+    if(activePromo){
+        if(discountInfo.type === "percent") discount = subtotal * (discountInfo.value / 100);
+        else discount = discountInfo.value;
+    }
+    const final = Math.max(0, subtotal - discount);
+    window.finalTotal = final;
+    document.getElementById('totalDisplay').innerText = final.toFixed(2) + " AED";
+}
+updateTotal();
+
+// HELPER: Sanitizes filenames so Supabase doesn't reject weird characters
+function sanitizeFilename(name) {
+    return name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+}
+
+document.getElementById('orderForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = "Processing...";
+
+    try {
+        const name = document.getElementById('custName').value;
+        const email = document.getElementById('custEmail').value;
+        const phone = document.getElementById('custPhone').value;
+        const items = [];
+
+        for(let i=1; i<=qty; i++){
+            const frontFile = document.getElementById(`front${i}`).files[0];
+            const backFile = document.getElementById(`back${i}`).files[0];
+            if(!frontFile || !backFile) throw new Error(`Missing photos for keychain ${i}`);
+            items.push({ keychain_no: i, front_name: frontFile.name, back_name: backFile.name });
         }
 
-        function removePromo() {
-            activePromo = null;
-            discountInfo = { type: null, value: 0 };
-            
-            const pBtn = document.getElementById('promoBtn');
-            pBtn.style.background = "var(--primary)";
-            pBtn.innerText = "Apply";
-            pBtn.onclick = applyPromo;
-            
-            document.getElementById('promoInput').value = "";
-            updateQty(0);
-        }
-        
-        function updateQty(n) {
-            qty = Math.max(1, Math.min(10, qty + n));
-            document.getElementById('qtyText').innerText = qty;
-            
-            let subtotal = qty * 4;
-            let discountAmount = 0;
-        
-            if (activePromo) {
-                if (discountInfo.type === 'percent') {
-                    discountAmount = subtotal * (discountInfo.value / 100);
-                } else {
-                    discountAmount = discountInfo.value;
-                }
-            }
-        
-            const finalTotal = Math.max(0, subtotal - discountAmount);
-            document.getElementById('totalDisplay').innerText = finalTotal.toFixed(2) + " AED";
-            
-            window.currentDiscount = discountAmount;
-            window.currentTotal = finalTotal;
-        }
+        // 1. Create main order record
+        const { data: order, error } = await sb.from('orders').insert([{
+            customer_name: name,
+            customer_email: email,
+            phone: phone,
+            promo_code: activePromo,
+            total_price_aed: window.finalTotal,
+            items: items // Assuming this is a jsonb column
+        }]).select().single();
 
-        ['f', 'b'].forEach(x => {
-            document.getElementById(`${x}File`).onchange = (e) => {
-                const file = e.target.files[0];
-                if(file) {
-                    const img = document.getElementById(`${x}Img`);
-                    img.src = URL.createObjectURL(file);
-                    img.style.display = 'block';
-                    document.getElementById(`${x}Lab`).style.display = 'none';
-                }
-            }
-        });
+        if(error) throw error;
 
-        document.getElementById('keyForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('subBtn');
-            const rawName = document.getElementById('custName').value || "Guest";
-            const safeName = String(rawName).replace(/\s+/g,'_').toLowerCase();
-            const email = document.getElementById('custEmail').value.trim().toLowerCase();
-            const finalDisplayPrice = window.currentTotal.toFixed(2);
+        // Array to hold all the rows we want to insert into order_photos
+        const photoInserts = [];
 
-            btn.disabled = true;
-            btn.innerText = "Processing...";
+        // 2. Upload images loop
+        for(let i=1; i<=qty; i++){
+            const frontFile = document.getElementById(`front${i}`).files[0];
+            const backFile = document.getElementById(`back${i}`).files[0];
 
-            try {
-                const { data: order, error } = await sb.from('orders').insert([{
-                    customer_name: rawName,
-                    customer_email: email,
-                    phone: document.getElementById('custPhone').value,
-                    promo_code: activePromo,
-                    discount_amount: window.currentDiscount || 0,
-                    total_price_aed: window.currentTotal
-                }]).select().single();
+            const frontExt = frontFile.name.split('.').pop() || 'jpg';
+            const backExt = backFile.name.split('.').pop() || 'jpg';
 
-                if(error) throw error;
+            // Sanitize filenames with order ID to ensure uniqueness
+            const frontName = sanitizeFilename(`${order.id}_front_${i}.${frontExt}`);
+            const backName = sanitizeFilename(`${order.id}_back_${i}.${backExt}`);
 
-                // Log promo usage
-                if(activePromo) {
-                    await sb.from('used_promos').insert([{ email: email, promo_code: activePromo }]);
-                }
+            // Upload Front
+            const { error: frontErr } = await sb.storage.from('order-photos').upload(frontName, frontFile, { upsert: true });
+            if(frontErr) throw frontErr;
 
-                const fFile = document.getElementById('fFile').files[0];
-                const bFile = document.getElementById('bFile').files[0];
-                const fName = `${safeName}_${order.id}_front.jpg`;
-                const bName = `${safeName}_${order.id}_back.jpg`;
+            // Upload Back
+            const { error: backErr } = await sb.storage.from('order-photos').upload(backName, backFile, { upsert: true });
+            if(backErr) throw backErr;
 
-                await sb.storage.from('order-photos').upload(fName, fFile);
-                await sb.storage.from('order-photos').upload(bName, bFile);
-                
-                const fUrl = sb.storage.from('order-photos').getPublicUrl(fName).data.publicUrl;
-                const bUrl = sb.storage.from('order-photos').getPublicUrl(bName).data.publicUrl;
+            // Get Public URLs
+            const frontUrl = sb.storage.from('order-photos').getPublicUrl(frontName).data.publicUrl;
+            const backUrl = sb.storage.from('order-photos').getPublicUrl(backName).data.publicUrl;
 
-                await sb.from('orders').update({ front_photo_path: fName, back_photo_path: bName }).eq('id', order.id);
-
-                await emailjs.send(config.ejs_svc, config.ejs_tmp, {
-                    cust_name: rawName,
-                    cust_email: email,
-                    order_id: order.id,
-                    total_price: finalDisplayPrice,
-                    quantity: qty,
-                    to_name: rawName,
-                    front_url: fUrl,
-                    back_url: bUrl
-                });
-
-                document.getElementById('rID').innerText = `#${order.id}`;
-                document.getElementById('rName').innerText = rawName;
-                document.getElementById('rQty').innerText = qty;
-                document.getElementById('rTotal').innerText = finalDisplayPrice + " AED";
-                document.getElementById('successModal').classList.add('active');
-
-            } catch (err) {
-                console.error(err);
-                alert("Order failed. Please check connection.");
-                btn.disabled = false;
-                btn.innerText = "Place Your Order";
-            }
-        };
-
-        function downloadReceipt() {
-            const element = document.getElementById('receiptContent');
-            html2canvas(element).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF();
-                pdf.addImage(imgData, 'PNG', 15, 15, 180, 200);
-                pdf.save(`KeyCraft_Receipt_${Date.now()}.pdf`);
+            // Add to array for batch insertion
+            photoInserts.push({
+                order_id: order.id,
+                keychain_no: i,
+                front_url: frontUrl,
+                back_url: backUrl
             });
         }
-    </script>
+
+        // 3. Batch insert all photos into order_photos table
+        const { error: photoDbErr } = await sb.from('order_photos').insert(photoInserts);
+        if(photoDbErr) throw photoDbErr;
+
+        // 4. Save Promo Usage
+        if(activePromo){
+            await sb.from('used_promos').insert([{ email: email, promo_code: activePromo }]);
+        }
+
+        // 5. Send Email
+        try {
+            await emailjs.send(config.ejs_svc, config.ejs_tmp, {
+                cust_name: name, cust_email: email, order_id: order.id, quantity: qty,
+                total_price: window.finalTotal.toFixed(2), to_name: name
+            });
+        } catch (emailErr) {
+            console.warn("Email failed to send, but order was placed.", emailErr);
+        }
+
+        // Display Success Modal
+        document.getElementById('rID').innerText = "#" + order.id;
+        document.getElementById('rName').innerText = name;
+        document.getElementById('rEmail').innerText = email;
+        document.getElementById('rQty').innerText = qty;
+        document.getElementById('rTotal').innerText = window.finalTotal.toFixed(2) + " AED";
+        document.getElementById('receiptModal').classList.add('active');
+        btn.innerText = "Success";
+
+    } catch(err) {
+        console.error("Order process error: ", err);
+        alert("Order failed:\n\n" + err.message);
+        btn.disabled = false;
+        btn.innerText = "Place Your Order";
+    }
+};
+
+function downloadReceipt(){
+    const receipt = document.getElementById('receiptContent');
+    html2canvas(receipt).then(canvas=>{
+        const img = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        pdf.addImage(img, 'PNG', 10, 10, 190, 0);
+        pdf.save('Snapkey_Receipt.pdf');
+    });
+}
+</script>
 </body>
 </html>
