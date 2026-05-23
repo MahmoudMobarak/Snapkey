@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeyCraft | Admin Manager</title>
+    
+    <script src="admin-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --primary: #6366f1; --dark: #0f172a; --bg: #f1f5f9; --success: #10b981; --danger: #ef4444; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: var(--dark); padding: 40px; }
+
+        #loginOverlay { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .login-card { background: white; padding: 3rem; border-radius: 35px; width: 400px; text-align: center; }
+        input[type="password"] { width: 100%; padding: 1.2rem; margin-bottom: 1.2rem; border-radius: 15px; border: 2px solid #e2e8f0; font-size: 1.1rem; }
+        
+        .main-container { display: none; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+
+        .table-wrapper { background: white; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+        th { background: #f8fafc; padding: 20px; text-align: left; font-size: 0.8rem; color: #64748b; text-transform: uppercase; border-bottom: 2px solid #edf2f7; }
+        td { padding: 20px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+
+        .btn-container { display: flex; gap: 8px; }
+        .download-btn { 
+            padding: 10px 16px; 
+            background: white; 
+            color: var(--primary); 
+            text-decoration: none; 
+            border-radius: 12px; 
+            font-weight: 700; 
+            font-size: 0.85rem; 
+            border: 1px solid #e2e8f0; 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: inline-block;
+        }
+
+        .download-btn:hover { 
+            transform: scale(1.15) translateY(-3px); 
+            background: var(--primary); 
+            color: white; 
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4); 
+            border-color: var(--primary);
+            z-index: 10;
+        }
+
+        .promo-tag { background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; }
+        .delete-btn { padding: 8px 12px; background: #fef2f2; color: var(--danger); border: 1px solid #fee2e2; border-radius: 10px; cursor: pointer; font-weight: 700; }
+        .delete-btn:hover { background: var(--danger); color: white; }
+
+        tr.completed-row { opacity: 0.4; filter: grayscale(1); background: #f8fafc; }
+        .checkbox-custom { width: 22px; height: 22px; cursor: pointer; accent-color: var(--success); }
+    </style>
+</head>
+<body>
+
+    <div id="loginOverlay">
+        <div class="login-card">
+            <h2 style="margin-bottom:1.5rem">Admin Access</h2>
+            <input type="password" id="adminPass" placeholder="Enter Password">
+            <button onclick="handleLogin()" style="width:100%; padding:1rem; background:var(--primary); color:white; border:none; border-radius:15px; font-weight:800; cursor:pointer;">Unlock Panel</button>
+        </div>
+    </div>
+
+    <div class="main-container" id="adminUI">
+        <div class="header">
+            <div>
+                <h1>KeyCraft Dashboard</h1>
+                <p id="stats" style="color: #64748b; font-weight: 600;">Loading all orders...</p>
+            </div>
+            <button onclick="location.reload()" style="padding:10px 20px; border-radius:10px; border:1px solid #ccc; cursor:pointer; font-weight:700">Lock Panel</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Done</th>
+                        <th>ID</th>
+                        <th>Customer</th>
+                        <th>Promo</th>
+                        <th>Price</th>
+                        <th>Photo Assets</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="orderTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const sb = supabase.createClient(CONFIG.SB_URL, CONFIG.SB_KEY);
+
+        function simpleHash(str) {
+            let h = 0; for (let i = 0; i < str.length; i++) { h = (h << 5) - h + str.charCodeAt(i); h |= 0; }
+            return h.toString();
+        }
+
+        function handleLogin() {
+            const typed = document.getElementById('adminPass').value;
+            if (simpleHash(typed) === CONFIG.ADMIN_PASSWORD_HASH) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('adminUI').style.display = 'block';
+                loadOrders();
+            } else { alert("Access Denied"); }
+        }
+
+        async function loadOrders() {
+            const { data: orders, error } = await sb
+                .from('orders')
+                .select('*')
+                .order('id', { ascending: false });
+            
+            if (error) {
+                console.error("Fetch error:", error);
+                return;
+            }
+
+            const table = document.getElementById('orderTable');
+            table.innerHTML = "";
+            document.getElementById('stats').innerText = `${orders.length} total orders found in database`;
+
+            orders.forEach(order => {
+                const isDone = order.is_completed; 
+                const fUrl = sb.storage.from('order-photos').getPublicUrl(order.front_photo_path).data.publicUrl;
+                const bUrl = sb.storage.from('order-photos').getPublicUrl(order.back_photo_path).data.publicUrl;
+            
+                table.innerHTML += `
+                    <tr class="${isDone ? 'completed-row' : ''}">
+                        <td>
+                            <input type="checkbox" class="checkbox-custom" 
+                                   ${isDone ? 'checked' : ''} 
+                                   onchange="toggleStatus(${order.id}, this.checked)">
+                        </td>
+                        <td style="font-family: monospace; color:#64748b; font-weight:700;">#${order.id}</td>
+                        <td>
+                            <div style="font-weight:700">${order.customer_name}</div>
+                            <div style="font-size:0.85rem; color:var(--primary); font-weight:600;">${order.customer_email}</div>
+                            <div style="font-size:0.8rem; color:#64748b">${order.phone}</div>
+                        </td>
+                        <td>
+                            ${order.promo_code ? 
+                                `<span class="promo-tag">${order.promo_code}</span>
+                                 <div style="font-size:0.75rem; color:var(--danger); font-weight:700;">-${order.discount_amount} AED</div>` 
+                                : '<span style="color:#cbd5e1">—</span>'}
+                        </td>
+                        <td style="font-weight:800; color:var(--primary)">
+                            ${order.total_price_aed ? parseFloat(order.total_price_aed).toFixed(2) : '4.00'} AED
+                        </td>
+                        <td>
+                            <div class="btn-container">
+                                <a href="${fUrl}" target="_blank" class="download-btn">Front</a>
+                                <a href="${bUrl}" target="_blank" class="download-btn">Back</a>
+                            </div>
+                        </td>
+                        <td style="font-size:0.8rem; color:#64748b">${new Date(order.created_at).toLocaleDateString()}</td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteOrder(${order.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function toggleStatus(orderId, status) {
+            await sb.from('orders').update({ is_completed: status }).eq('id', orderId);
+            loadOrders();
+        }
+
+        async function deleteOrder(orderId) {
+            if (confirm("Permanently delete order #" + orderId + "?")) {
+                const { error } = await sb.from('orders').delete().eq('id', orderId);
+                if (error) alert("Delete failed: " + error.message);
+                else loadOrders();
+            }
+        }
+
+        document.getElementById('adminPass').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+    </script>
+</body>
+</html>
